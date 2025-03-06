@@ -1,0 +1,61 @@
+import random
+
+from loguru import logger
+
+from .user import Female, Male, User
+
+
+class Market:
+    def __init__(self, n_users, male_ratio):
+        self.users: list[User] = []
+        self.day = 0
+        self.n_users = n_users
+        self.male_ratio = male_ratio
+
+    def add_user(self, user: User):
+        """Adds a user to the market."""
+        self.users.append(user)
+
+    def generate_users(self, n_users: int, male_ratio: int = 0.5):
+        """Generates `n_users` users with a proportion of males defined by `male_ratio`."""
+
+        num_males = int(n_users * male_ratio)
+        num_females = n_users - num_males
+        logger.info(f"Generating {n_users} users with {male_ratio:.0%} of Male")
+
+        for i in range(num_males):
+            self.add_user(
+                Male(
+                    id=len(self.users),
+                    attractiveness_score=random.uniform(1, 10),
+                    like_rate=random.uniform(0.1, 0.9),
+                )
+            )
+
+        for i in range(num_females):
+            self.add_user(
+                Female(
+                    id=len(self.users),
+                    attractiveness_score=random.uniform(1, 10),
+                    like_rate=random.uniform(0.1, 0.9),
+                )
+            )
+
+        logger.info("Users generated !")
+
+    def run(self, days):
+        """Runs the simulation for a given number of days."""
+        self.generate_users(n_users=self.n_users, male_ratio=self.male_ratio)
+
+        for _ in range(days):
+            self.day += 1
+            logger.info(f"📅 Day {self.day}: Users are swiping!")
+
+            for user in self.users:
+                user.reset_daily_swipes()
+                others_users_not_seen = random.sample(
+                    [u for u in self.users if u.id not in user.seen_users and u.id != user.id],
+                    min(100, len(self.users) - 1),
+                )
+
+                user.make_all_swipes(others_users_not_seen)
