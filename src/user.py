@@ -2,7 +2,7 @@ import random
 
 
 class User:
-    def __init__(self, id, gender, attractiveness_score, like_rate, swipe_limit=50):
+    def __init__(self, id, gender, attractiveness_score, like_rate, swipe_limit):
         self.id = id
         self.gender = gender
         self.attractiveness_score = attractiveness_score
@@ -68,10 +68,10 @@ class User:
 
 
 class Male(User):
-    def __init__(self, id, attractiveness_score, like_rate):
-        super().__init__(id, "Male", attractiveness_score, like_rate)
+    def __init__(self, id, attractiveness_score, like_rate, swipe_limit):
+        super().__init__(id, "Male", attractiveness_score, like_rate, swipe_limit)
 
 
 class Female(User):
-    def __init__(self, id, attractiveness_score, like_rate):
-        super().__init__(id, "Female", attractiveness_score, like_rate)
+    def __init__(self, id, attractiveness_score, like_rate, swipe_limit):
+        super().__init__(id, "Female", attractiveness_score, like_rate, swipe_limit)

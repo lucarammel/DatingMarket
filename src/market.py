@@ -1,5 +1,6 @@
 import random
 
+import polars as pl
 from loguru import logger
 
 from .user import Female, Male, User
@@ -34,8 +35,9 @@ class Market:
             self.add_user(
                 Male(
                     id=len(self.users),
-                    attractiveness_score=random.uniform(1, 10),
-                    like_rate=random.uniform(0.1, 0.9),
+                    attractiveness_score=0.5,
+                    like_rate=0.5,
+                    swipe_limit=20,
                 )
             )
 
@@ -43,8 +45,9 @@ class Market:
             self.add_user(
                 Female(
                     id=len(self.users),
-                    attractiveness_score=random.uniform(1, 10),
-                    like_rate=random.uniform(0.1, 0.9),
+                    attractiveness_score=0.5,
+                    like_rate=0.5,
+                    swipe_limit=20,
                 )
             )
 
@@ -75,3 +78,20 @@ class Market:
                 )
 
                 user.make_all_swipes(profiles_to_present)
+
+    def to_dataframe(self):
+        """Exporte les utilisateurs sous forme de DataFrame (polars ou pandas)."""
+        data = [
+            {
+                "id": user.id,
+                "gender": user.gender,
+                "attractiveness_score": user.attractiveness_score,
+                "like_rate": user.like_rate,
+                "matches": len(user.matches),
+                "liked_users": len(user.liked_users),
+                "seen_users": len(user.seen_users),
+            }
+            for user in self.users
+        ]
+
+        return pl.DataFrame(data)
