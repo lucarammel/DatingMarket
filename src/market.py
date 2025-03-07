@@ -83,9 +83,12 @@ class Market:
                 "id": user.id,
                 "gender": user.gender.value,
                 "attractiveness_score": user.attractiveness_score,
-                "like_rate": user.like_rate,
+                "like_rate_start": user.like_rate_history[0],
+                "like_rate_end": user.like_rate,
                 "matches": len(user.matches),
-                "liked_users": len(user.liked_users),
+                "match_rate": len(user.matches) / len(user.liked_users),
+                "likes": len(user.liked_users),
+                "likes_rate": len(user.liked_users) / len(user.seen_users),
                 "seen_users": len(user.seen_users),
             }
             for user in self.users
