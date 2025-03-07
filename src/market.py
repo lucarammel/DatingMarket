@@ -1,5 +1,6 @@
 import random
 
+import plotly.express as px
 import polars as pl
 from loguru import logger
 
@@ -35,8 +36,8 @@ class Market:
             self.add_user(
                 Male(
                     id=len(self.users),
-                    attractiveness_score=random.gauss(0.5, 0.1),
-                    like_rate=random.gauss(0.5, 0.1),
+                    attractiveness_score=max(min(random.gauss(0.5, 0.2), 0.8), 0.2),
+                    like_rate=max(min(random.gauss(0.5, 0.1), 0.8), 0.2),
                     swipe_limit=20,
                 )
             )
@@ -45,8 +46,8 @@ class Market:
             self.add_user(
                 Female(
                     id=len(self.users),
-                    attractiveness_score=random.gauss(0.5, 0.1),
-                    like_rate=random.gauss(0.5, 0.1),
+                    attractiveness_score=max(min(random.gauss(0.5, 0.2), 0.8), 0.2),
+                    like_rate=max(min(random.gauss(0.5, 0.1), 0.8), 0.2),
                     swipe_limit=20,
                 )
             )
@@ -82,16 +83,59 @@ class Market:
             {
                 "id": user.id,
                 "gender": user.gender.value,
-                "attractiveness_score": user.attractiveness_score,
-                "like_rate_start": user.like_rate_history[0],
-                "like_rate_end": user.like_rate,
+                "attractiveness_score": round(user.attractiveness_score, 2),
+                "like_rate_start": round(user.like_rate_history[0], 2),
+                "like_rate_end": round(user.like_rate, 2),
+                "increase_like_rate": round(user.like_rate - user.like_rate_history[0], 2),
                 "matches": len(user.matches),
-                "match_rate": len(user.matches) / len(user.liked_users),
+                "match_rate": round(len(user.matches) / len(user.liked_users), 2),
                 "likes": len(user.liked_users),
-                "likes_rate": len(user.liked_users) / len(user.seen_users),
                 "seen_users": len(user.seen_users),
             }
             for user in self.users
         ]
 
         return pl.DataFrame(data)
+
+    def plot_scatter(df: str, x: str, y: str, color: str, size: str, title: str, labels: dict):
+        # Create scatter plot
+        fig = px.scatter(
+            df,
+            x=x,
+            y=y,
+            color=color,  # Different colors for Male & Female
+            size=size,
+            title=title,
+            labels=labels,
+        )
+
+        # Update layout for customization
+        fig.update_layout(
+            title_font=dict(family="Arial", size=20, color="black", weight="bold"),  # Bold title
+            xaxis_title_font=dict(
+                family="Arial", size=14, color="black", weight="bold"
+            ),  # Bold x-axis label
+            yaxis_title_font=dict(
+                family="Arial", size=14, color="black", weight="bold"
+            ),  # Bold y-axis label
+            font=dict(
+                family="Arial", size=12, color="black", weight="bold"
+            ),  # Bold labels and ticks
+            margin=dict(l=50, r=50, t=50, b=50),  # Add margins around the plot
+            xaxis=dict(
+                showgrid=True,
+                zeroline=True,
+                showline=True,  # Show x-axis line
+                linecolor="black",  # Set the x-axis line color
+            ),
+            yaxis=dict(
+                showgrid=True,
+                zeroline=True,
+                showline=True,  # Show y-axis line
+                linecolor="black",  # Set the y-axis line color
+                anchor="x",
+            ),
+            legend_title="Legend",
+        )
+        # fig.update_traces(marker=dict(sizemode="diameter", sizemax=20))
+        fig.show()

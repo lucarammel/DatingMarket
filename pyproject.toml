@@ -8,6 +8,7 @@ dependencies = [
     "altair>=5.5.0",
     "loguru>=0.7.3",
     "numpy>=2.0.2",
+    "plotly>=6.0.0",
     "polars>=1.24.0",
     "ruff>=0.9.9",
 ]
