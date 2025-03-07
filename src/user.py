@@ -1,6 +1,13 @@
-from __future__ import annotations  # Required for forward references in Python <3.9
+from __future__ import annotations
 
+import math
 import random
+from enum import Enum
+
+
+class Gender(Enum):
+    male = "Male"
+    female = "Female"
 
 
 class User:
@@ -39,7 +46,8 @@ class User:
         """Determines if the user swipes right (likes the other user)."""
 
         self.swipes_today += 1
-        liked = random.random() < self.like_rate
+        threshold = self.adjust_like_rate(other_user.attractiveness_score)
+        liked = random.random() < threshold
 
         return liked
 
@@ -58,10 +66,14 @@ class User:
         self.swipes_today = 0
 
     def get_opposite_gender(self):
-        if self.gender == "Male":
+        if self.gender == Gender.male:
             return Female
         else:
             return Male
+
+    def adjust_like_rate(self, attractiveness_score, alpha=1):
+        """Uses an exponential function to decrease like_rate for higher attractiveness."""
+        return -self.like_rate * math.log(attractiveness_score)
 
     def is_reciprocal(self, other_user: User):
         """Determines if the other user has also liked the user."""
@@ -85,9 +97,9 @@ class User:
 
 class Male(User):
     def __init__(self, id, attractiveness_score, like_rate, swipe_limit):
-        super().__init__(id, "Male", attractiveness_score, like_rate, swipe_limit)
+        super().__init__(id, Gender.male, attractiveness_score, like_rate, swipe_limit)
 
 
 class Female(User):
     def __init__(self, id, attractiveness_score, like_rate, swipe_limit):
-        super().__init__(id, "Female", attractiveness_score, like_rate, swipe_limit)
+        super().__init__(id, Gender.female, attractiveness_score, like_rate, swipe_limit)

@@ -35,8 +35,8 @@ class Market:
             self.add_user(
                 Male(
                     id=len(self.users),
-                    attractiveness_score=0.5,
-                    like_rate=0.5,
+                    attractiveness_score=random.gauss(0.5, 0.1),
+                    like_rate=random.gauss(0.5, 0.1),
                     swipe_limit=20,
                 )
             )
@@ -45,8 +45,8 @@ class Market:
             self.add_user(
                 Female(
                     id=len(self.users),
-                    attractiveness_score=0.5,
-                    like_rate=0.5,
+                    attractiveness_score=random.gauss(0.5, 0.1),
+                    like_rate=random.gauss(0.5, 0.1),
                     swipe_limit=20,
                 )
             )
