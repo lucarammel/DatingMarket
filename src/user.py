@@ -42,11 +42,24 @@ class User:
         else:
             return False
 
+    def update_like_rate(self):
+        """Updates the like_rate with some randomness based on match rate"""
+        match_rate = len(self.matches) / len(self.liked_users)
+
+        if match_rate > 0.3:
+            self.like_rate -= self.like_rate * abs(random.gauss(0, 0.5))
+        else:
+            self.like_rate += self.like_rate * abs(random.gauss(0, 0.5))
+
+    def compute_threshold_like_rate(self, attractiveness_score):
+        """Uses an log function to decrease like_rate for higher attractiveness."""
+        return 1 + self.like_rate * max(math.log(attractiveness_score), -1)
+
     def swipe(self, other_user: User):
         """Determines if the user swipes right (likes the other user)."""
 
         self.swipes_today += 1
-        threshold = self.adjust_like_rate(other_user.attractiveness_score)
+        threshold = self.compute_threshold_like_rate(other_user.attractiveness_score)
         liked = random.random() < threshold
 
         return liked
@@ -71,10 +84,6 @@ class User:
         else:
             return Male
 
-    def adjust_like_rate(self, attractiveness_score):
-        """Uses an exponential function to decrease like_rate for higher attractiveness."""
-        return 1 + self.like_rate * max(math.log(attractiveness_score), -1)
-
     def is_reciprocal(self, other_user: User):
         """Determines if the other user has also liked the user."""
         return self in other_user.liked_users
@@ -93,6 +102,8 @@ class User:
                         user.match(self)
 
                 self.seen_users.append(user.id)
+
+        self.update_like_rate()
 
 
 class Male(User):
