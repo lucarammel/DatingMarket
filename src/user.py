@@ -71,9 +71,9 @@ class User:
         else:
             return Male
 
-    def adjust_like_rate(self, attractiveness_score, alpha=1):
+    def adjust_like_rate(self, attractiveness_score):
         """Uses an exponential function to decrease like_rate for higher attractiveness."""
-        return -self.like_rate * math.log(attractiveness_score)
+        return 1 + self.like_rate * max(math.log(attractiveness_score), -1)
 
     def is_reciprocal(self, other_user: User):
         """Determines if the other user has also liked the user."""

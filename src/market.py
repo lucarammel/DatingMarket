@@ -81,7 +81,7 @@ class Market:
         data = [
             {
                 "id": user.id,
-                "gender": user.gender,
+                "gender": user.gender.value,
                 "attractiveness_score": user.attractiveness_score,
                 "like_rate": user.like_rate,
                 "matches": len(user.matches),
