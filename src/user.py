@@ -1,3 +1,5 @@
+from __future__ import annotations  # Required for forward references in Python <3.9
+
 import random
 
 
@@ -10,9 +12,9 @@ class User:
         self.swipe_limit = swipe_limit
         self.swipes_today = 0
 
-        self.matches = []
-        self.liked_users = []
-        self.seen_users = []
+        self.matches: list[User] = []
+        self.liked_users: list[User] = []
+        self.seen_users: list[User] = []
 
     def __str__(self):
         return (
@@ -33,15 +35,21 @@ class User:
         else:
             return False
 
-    def swipe(self, other_user):
+    def swipe(self, other_user: User):
         """Determines if the user swipes right (likes the other user)."""
 
         self.swipes_today += 1
-        liked = random.random() < self.like_rate  # Decide based on like rate
+        liked = random.random() < self.like_rate
 
         return liked
 
-    def match(self, other_user):
+    def get_possible_match(self, other_user: User):
+        if other_user.id in self.matches:
+            return False
+        if other_user.id in self.liked_users and self.id in other_user.liked_users:
+            return True
+
+    def match(self, other_user: User):
         """Registers a match between two users."""
         self.matches.append(other_user)
 
@@ -55,15 +63,23 @@ class User:
         else:
             return Male
 
-    def make_all_swipes(self, other_users):
+    def is_reciprocal(self, other_user: User):
+        """Determines if the other user has also liked the user."""
+        return self in other_user.liked_users
+
+    def make_all_swipes(self, other_users: list[User]):
         """Makes swipes on all other users."""
         for user in other_users:
+            if self.get_swipe_limit():
+                break
             if user.id not in self.seen_users and user.id != self.id:
-                if self.get_swipe_limit():
-                    break
                 liked = self.swipe(user)
                 if liked:
                     self.liked_users.append(user)
+                    if self.is_reciprocal(user):
+                        self.match(user)
+                        user.match(self)
+
                 self.seen_users.append(user.id)
 
 

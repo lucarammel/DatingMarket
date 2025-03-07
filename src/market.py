@@ -63,9 +63,7 @@ class Market:
 
             for user in self.users:
                 user.reset_daily_swipes()
-                all_users_by_gender = (
-                    self.females if isinstance(user.get_opposite_gender(), Female) else self.males
-                )
+                all_users_by_gender = self.females if isinstance(user, Male) else self.males
                 others_users_not_seen = [
                     u
                     for u in all_users_by_gender
@@ -73,8 +71,7 @@ class Market:
                 ]
 
                 profiles_to_present = random.sample(
-                    others_users_not_seen,
-                    min(100, len(others_users_not_seen) - 1),
+                    others_users_not_seen, min(len(others_users_not_seen), user.swipe_limit)
                 )
 
                 user.make_all_swipes(profiles_to_present)
