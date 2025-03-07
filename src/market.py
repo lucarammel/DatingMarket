@@ -7,13 +7,20 @@ from .user import Female, Male, User
 
 class Market:
     def __init__(self, n_users, male_ratio):
+        self.males: list[Male] = []
+        self.females: list[Female] = []
         self.users: list[User] = []
+
         self.day = 0
         self.n_users = n_users
         self.male_ratio = male_ratio
 
     def add_user(self, user: User):
         """Adds a user to the market."""
+        if isinstance(user, Male):
+            self.males.append(user)
+        else:
+            self.females.append(user)
         self.users.append(user)
 
     def generate_users(self, n_users: int, male_ratio: int = 0.5):
@@ -53,9 +60,18 @@ class Market:
 
             for user in self.users:
                 user.reset_daily_swipes()
-                others_users_not_seen = random.sample(
-                    [u for u in self.users if u.id not in user.seen_users and u.id != user.id],
-                    min(100, len(self.users) - 1),
+                all_users_by_gender = (
+                    self.females if isinstance(user.get_opposite_gender(), Female) else self.males
+                )
+                others_users_not_seen = [
+                    u
+                    for u in all_users_by_gender
+                    if u.id not in user.seen_users and u.id != user.id
+                ]
+
+                profiles_to_present = random.sample(
+                    others_users_not_seen,
+                    min(100, len(others_users_not_seen) - 1),
                 )
 
-                user.make_all_swipes(others_users_not_seen)
+                user.make_all_swipes(profiles_to_present)

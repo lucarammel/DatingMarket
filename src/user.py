@@ -1,7 +1,5 @@
 import random
 
-from loguru import logger
-
 
 class User:
     def __init__(self, id, gender, attractiveness_score, like_rate, swipe_limit=50):
@@ -16,11 +14,27 @@ class User:
         self.liked_users = []
         self.seen_users = []
 
+    def __str__(self):
+        return (
+            "User:\n"
+            f"  ID: {self.id}\n"
+            f"  Gender: {self.gender}\n"
+            f"  Attractiveness Score: {self.attractiveness_score}\n"
+            f"  Like Rate: {self.like_rate:.2f}\n"
+            f"  Swipes Today: {self.swipes_today}/{self.swipe_limit}\n"
+            f"  Matches: {len(self.matches)}\n"
+            f"  Liked Users: {len(self.liked_users)}\n"
+            f"  Seen Users: {len(self.seen_users)}"
+        )
+
+    def get_swipe_limit(self):
+        if self.swipes_today >= self.swipe_limit:
+            return True
+        else:
+            return False
+
     def swipe(self, other_user):
         """Determines if the user swipes right (likes the other user)."""
-        if self.swipes_today >= self.swipe_limit:
-            logger.info(f"{self.name} has reached their daily swipe limit.")
-            return False
 
         self.swipes_today += 1
         liked = random.random() < self.like_rate  # Decide based on like rate
@@ -35,10 +49,18 @@ class User:
         """Resets swipe count at the start of a new day."""
         self.swipes_today = 0
 
+    def get_opposite_gender(self):
+        if self.gender == "Male":
+            return Female
+        else:
+            return Male
+
     def make_all_swipes(self, other_users):
         """Makes swipes on all other users."""
         for user in other_users:
             if user.id not in self.seen_users and user.id != self.id:
+                if self.get_swipe_limit():
+                    break
                 liked = self.swipe(user)
                 if liked:
                     self.liked_users.append(user)
