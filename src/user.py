@@ -23,6 +23,8 @@ class User:
         self.liked_users: list[User] = []
         self.seen_users: list[User] = []
         self.like_rate_history: list[float] = [self.like_rate]
+        self.match_rate: float
+        self.match_rate_history: list[float] = []
 
     def __str__(self):
         return (
@@ -45,14 +47,17 @@ class User:
 
     def update_like_rate(self):
         """Updates the like_rate with some randomness based on match rate"""
-        match_rate = len(self.matches) / len(self.liked_users)
 
-        if match_rate > 0.4:
+        if self.match_rate > 0.4:
             self.like_rate -= self.like_rate * abs(random.gauss(0, 0.1))
-        elif match_rate < 0.1:
+        elif self.match_rate < 0.1:
             self.like_rate += self.like_rate * abs(random.gauss(0, 0.1))
 
         self.like_rate_history.append(min(self.like_rate, 1))
+
+    def update_match_rate(self):
+        self.match_rate_history.append(self.match_rate)
+        self.match_rate = len(self.matches) / len(self.liked_users)
 
     def compute_threshold_like_rate(self, attractiveness_score):
         """Uses an log function to decrease like_rate for higher attractiveness."""
@@ -107,6 +112,7 @@ class User:
                 self.seen_users.append(user.id)
 
         self.update_like_rate()
+        self.update_match_rate()
 
 
 class Male(User):

@@ -4,7 +4,7 @@ import plotly.express as px
 import polars as pl
 from loguru import logger
 
-from .user import Female, Male, User
+from src.user import Female, Male, User
 
 
 class Market:
@@ -53,6 +53,19 @@ class Market:
             )
 
         logger.info("Users generated !")
+
+    def sort_users_by_attractiveness(self):
+        self.females = (
+            pl.DataFrame([{"user": u, "attractiveness": u.match_rate} for u in self.females])
+            .sort(by="attractiveness", descending=True)["user"]
+            .to_list()
+        )
+
+        self.females = (
+            pl.DataFrame([{"user": u, "attractiveness": u.match_rate} for u in self.females])
+            .sort(by="attractiveness", descending=True)["user"]
+            .to_list()
+        )
 
     def run(self, days):
         """Runs the simulation for a given number of days."""
