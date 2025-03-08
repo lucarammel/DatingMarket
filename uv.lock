@@ -525,9 +525,8 @@ wheels = [
 [[package]]
 name = "datingappsimulation"
 version = "0.1.0"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
-    { name = "altair" },
     { name = "loguru" },
     { name = "numpy", version = "2.0.2", source = { registry = "https://pypi.org/simple/" }, marker = "python_full_version < '3.10'" },
     { name = "numpy", version = "2.2.3", source = { registry = "https://pypi.org/simple/" }, marker = "python_full_version >= '3.10'" },
@@ -549,7 +548,6 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "altair", specifier = ">=5.5.0" },
     { name = "loguru", specifier = ">=0.7.3" },
     { name = "numpy", specifier = ">=2.0.2" },
     { name = "plotly", specifier = ">=6.0.0" },

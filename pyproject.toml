@@ -5,7 +5,6 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
-    "altair>=5.5.0",
     "loguru>=0.7.3",
     "numpy>=2.0.2",
     "plotly>=6.0.0",
@@ -20,6 +19,16 @@ default = true
 
 [[tool.uv.index]]
 url = "https://pypi.org/simple/"
+
+
+[build-system]
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+include-package-data = false
+packages.find.include = ['dating_market*']
+
 
 [dependency-groups]
 dev = [

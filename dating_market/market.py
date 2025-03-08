@@ -4,7 +4,7 @@ import plotly.express as px
 import polars as pl
 from loguru import logger
 
-from src.user import Female, Male, User
+from dating_market.user import Female, Male, User
 
 
 class Market:

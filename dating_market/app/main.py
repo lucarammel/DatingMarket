@@ -1,7 +1,7 @@
 import streamlit as st
 from loguru import logger
 
-from src.market import Market
+from dating_market.market import Market
 
 st.set_page_config(
     page_title="Dating App Simulator",
