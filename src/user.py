@@ -23,7 +23,7 @@ class User:
         self.liked_users: list[User] = []
         self.seen_users: list[User] = []
         self.like_rate_history: list[float] = [self.like_rate]
-        self.match_rate: float
+        self.match_rate: float | None = None
         self.match_rate_history: list[float] = []
 
     def __str__(self):
@@ -47,21 +47,22 @@ class User:
 
     def update_like_rate(self):
         """Updates the like_rate with some randomness based on match rate"""
+        if self.match_rate is not None:
+            if self.match_rate >= 0.33:
+                self.like_rate -= self.like_rate * abs(random.gauss(0, 0.1))
+            elif self.match_rate <= 0.1:
+                self.like_rate += self.like_rate * abs(random.gauss(0, 0.1))
 
-        if self.match_rate > 0.4:
-            self.like_rate -= self.like_rate * abs(random.gauss(0, 0.1))
-        elif self.match_rate < 0.1:
-            self.like_rate += self.like_rate * abs(random.gauss(0, 0.1))
-
-        self.like_rate_history.append(min(self.like_rate, 1))
+        self.like_rate = min(max(self.like_rate, 0), 1)
+        self.like_rate_history.append(self.like_rate)
 
     def update_match_rate(self):
-        self.match_rate_history.append(self.match_rate)
         self.match_rate = len(self.matches) / len(self.liked_users)
+        self.match_rate_history.append(self.match_rate)
 
     def compute_threshold_like_rate(self, attractiveness_score):
         """Uses an log function to decrease like_rate for higher attractiveness."""
-        return 1 + self.like_rate * max(math.log(attractiveness_score), -1)
+        return max(min(1 + self.like_rate * math.log(attractiveness_score), 1), 0)
 
     def swipe(self, other_user: User):
         """Determines if the user swipes right (likes the other user)."""
@@ -101,7 +102,7 @@ class User:
         for user in other_users:
             if self.get_swipe_limit():
                 break
-            if user.id not in self.seen_users and user.id != self.id:
+            if user not in self.seen_users and user != self:
                 liked = self.swipe(user)
                 if liked:
                     self.liked_users.append(user)
@@ -109,10 +110,7 @@ class User:
                         self.match(user)
                         user.match(self)
 
-                self.seen_users.append(user.id)
-
-        self.update_like_rate()
-        self.update_match_rate()
+                self.seen_users.append(user)
 
 
 class Male(User):

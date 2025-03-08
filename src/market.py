@@ -61,8 +61,8 @@ class Market:
             .to_list()
         )
 
-        self.females = (
-            pl.DataFrame([{"user": u, "attractiveness": u.match_rate} for u in self.females])
+        self.males = (
+            pl.DataFrame([{"user": u, "attractiveness": u.match_rate} for u in self.males])
             .sort(by="attractiveness", descending=True)["user"]
             .to_list()
         )
@@ -89,6 +89,10 @@ class Market:
                 )
 
                 user.make_all_swipes(profiles_to_present)
+
+            for user in self.users:
+                user.update_match_rate()
+                user.update_like_rate()
 
     def to_dataframe(self):
         """Exporte les utilisateurs sous forme de DataFrame (polars ou pandas)."""
