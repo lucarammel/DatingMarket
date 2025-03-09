@@ -11,17 +11,20 @@ class Participants:
     def __init__(self, n_users: int, male_ratio: float):
         self.n_users = n_users
         self.male_ratio = male_ratio
-        self.males: list[Male] = []
-        self.females: list[Female] = []
-        self.users: list[User] = []
+
+        self.males: list[int] = []
+        self.females: list[int] = []
+        self.users: dict[int, User] = {}
+
+        self.df_users: pl.DataFrame = pl.DataFrame()
 
     def add_user(self, user: User):
         """Adds a user to the market."""
         if isinstance(user, Male):
-            self.males.append(user)
+            self.males.append(user.id)
         else:
-            self.females.append(user)
-        self.users.append(user)
+            self.females.append(user.id)
+        self.users[user.id] = user
 
     def generate_users(self):
         """Generates `n_users` users with a proportion of males defined by `male_ratio`."""
@@ -50,38 +53,50 @@ class Participants:
                 )
             )
 
+        self.update_users_df()
+
         logger.info("Users generated !")
 
     def sort_users_by_attractiveness(self):
         self.females = (
-            pl.DataFrame([{"user": u, "attractiveness": u.match_rate} for u in self.females])
+            pl.DataFrame(
+                [{"user": id, "attractiveness": self.users[id].match_rate} for id in self.females]
+            )
             .sort(by="attractiveness", descending=True)["user"]
             .to_list()
         )
 
         self.males = (
-            pl.DataFrame([{"user": u, "attractiveness": u.match_rate} for u in self.males])
+            pl.DataFrame(
+                [{"user": id, "attractiveness": self.users[id].match_rate} for id in self.males]
+            )
             .sort(by="attractiveness", descending=True)["user"]
             .to_list()
         )
 
-    def run_swipes(self):
-        for user in self.users:
-            user.reset_daily_swipes()
-            all_users_by_gender = self.females if isinstance(user, Male) else self.males
-            others_users_not_seen = [
-                u for u in all_users_by_gender if u.id not in user.seen_users and u.id != user.id
-            ]
+    def update_users_df(self):
+        self.df_users = pl.DataFrame(
+            [{"id": id, "user": self.users[id]} for id in self.users.keys()]
+        )
 
-            profiles_to_present = random.sample(
-                others_users_not_seen, min(len(others_users_not_seen), user.swipe_limit)
+    def run_swipes(self):
+        self.update_users_df()
+
+        for id in self.users:
+            user = self.users[id]
+            user.reset_daily_swipes()
+
+            profiles_to_present = (
+                self.df_users.filter(~pl.col("id").is_in(user.seen_users))
+                .sample(n=user.swipe_limit)["user"]
+                .to_list()
             )
 
             user.make_all_swipes(profiles_to_present)
 
         for user in self.users:
-            user.update_match_rate()
-            user.update_like_rate()
+            self.users[id].update_match_rate()
+            self.users[id].update_like_rate()
 
     def to_dataframe(self):
         """Exporte les utilisateurs sous forme de DataFrame (polars ou pandas)."""

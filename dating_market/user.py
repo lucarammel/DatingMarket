@@ -19,9 +19,9 @@ class User:
         self.swipe_limit = swipe_limit
         self.swipes_today = 0
 
-        self.matches: list[User] = []
-        self.liked_users: list[User] = []
-        self.seen_users: list[User] = []
+        self.matches: list[int] = []
+        self.liked_users: list[int] = []
+        self.seen_users: list[int] = []
         self.like_rate_history: list[float] = [self.like_rate]
         self.match_rate: float | None = None
         self.match_rate_history: list[float] = []
@@ -30,7 +30,7 @@ class User:
         return (
             "User:\n"
             f"  ID: {self.id}\n"
-            f"  Gender: {self.gender}\n"
+            f"  Gender: {self.gender.value}\n"
             f"  Attractiveness Score: {self.attractiveness_score}\n"
             f"  Like Rate: {self.like_rate:.2f}\n"
             f"  Swipes Today: {self.swipes_today}/{self.swipe_limit}\n"
@@ -73,15 +73,9 @@ class User:
 
         return liked
 
-    def get_possible_match(self, other_user: User):
-        if other_user.id in self.matches:
-            return False
-        if other_user.id in self.liked_users and self.id in other_user.liked_users:
-            return True
-
-    def match(self, other_user: User):
+    def match(self, user_id: int):
         """Registers a match between two users."""
-        self.matches.append(other_user)
+        self.matches.append(user_id)
 
     def reset_daily_swipes(self):
         """Resets swipe count at the start of a new day."""
@@ -102,15 +96,14 @@ class User:
         for user in other_users:
             if self.get_swipe_limit():
                 break
-            if user not in self.seen_users and user != self:
-                liked = self.swipe(user)
-                if liked:
-                    self.liked_users.append(user)
-                    if self.is_reciprocal(user):
-                        self.match(user)
-                        user.match(self)
+            liked = self.swipe(user)
+            if liked:
+                self.liked_users.append(user.id)
+                if self.is_reciprocal(user):
+                    self.match(user.id)
+                    user.match(self.id)
 
-                self.seen_users.append(user)
+            self.seen_users.append(user.id)
 
 
 class Male(User):
