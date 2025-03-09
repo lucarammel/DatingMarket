@@ -86,11 +86,10 @@ class Participants:
             user = self.users[id]
             user.reset_daily_swipes()
 
-            profiles_to_present = (
-                self.df_users.filter(~pl.col("id").is_in(user.seen_users))
-                .sample(n=user.swipe_limit)["user"]
-                .to_list()
-            )
+            profiles_to_present = self.df_users.filter(~pl.col("id").is_in(user.seen_users))
+            count = min(profiles_to_present.height(), user.swipe_limit)
+
+            profiles_to_present.sample(n=count)["user"].to_list()
 
             user.make_all_swipes(profiles_to_present)
 
