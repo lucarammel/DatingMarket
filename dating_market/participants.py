@@ -58,8 +58,6 @@ class Participants:
                 )
             )
 
-        self.update_users_matrix()
-
         logger.info("Users generated !")
 
     def sort_users_by_attractiveness(self):
@@ -68,69 +66,82 @@ class Participants:
         ].to_list()
         self.males = self.df_users.sort(by="attractiveness_score", descending=True)["id"].to_list()
 
-    def build_potential_profiles(self, user: User):
-        gender_target = user.get_opposite_gender().value
+    def get_potential_profiles(self, user: User):
+        gender_target = user.get_opposite_gender()
+
         potential_profiles = self.df_users.filter(
-            ~pl.col("id").is_in(user.seen_users), pl.col("gender") == gender_target
+            ~pl.col("id").is_in(user.seen_users), pl.col("gender") == gender_target.value
         )
         count = min(potential_profiles.height, user.swipe_limit)
 
         potential_profiles = potential_profiles.sample(n=count)["id"].to_list()
 
-        return potential_profiles
+        return potential_profiles, gender_target
 
-    def update_users_matrix(self):
-        males_matrix = np.zeros(shape=(len(self.males), len(self.females)))
-        females_matrix = np.zeros(shape=(len(self.females), len(self.males)))
-
-        for idx_m, value_m in enumerate(self.males):
-            for idx_f, value_f in enumerate(self.females):
-                males_matrix[idx_m, idx_f] = self.users[value_m].compute_threshold_like_rate(
-                    self.users[value_f].attractiveness_score
-                )
-                females_matrix[idx_f, idx_m] = self.users[value_f].compute_threshold_like_rate(
-                    self.users[value_m].attractiveness_score
-                )
-        self.males_matrix = pd.DataFrame(males_matrix, columns=self.females).set_index(
-            np.array(self.males)
-        )
-        self.females_matrix = pd.DataFrame(females_matrix, columns=self.males).set_index(
-            np.array(self.females)
+    def get_is_liked_data(
+        self,
+        user_id: int,
+        potential_profiles: list[int],
+        gender: Gender = Gender.male,
+        gender_target: Gender = Gender.female,
+    ):
+        df_left = self.df_users.filter(
+            pl.col("gender") == gender.value, pl.col("id") == user_id
+        ).rename({"id": "id_left", "attractiveness_score": "attr_left", "like_rate": "like_left"})
+        df_right = self.df_users.filter(
+            pl.col("gender") == gender_target.value, pl.col("id").is_in(potential_profiles)
+        ).rename(
+            {"id": "id_right", "attractiveness_score": "attr_right", "like_rate": "like_right"}
         )
 
-    def get_is_liked_dataframe(self, gender: Gender = Gender.male):
-        if gender == Gender.male:
-            df_random = pd.DataFrame(
-                np.random.random(size=self.males_matrix.shape), columns=self.females
-            ).set_index(np.array(self.males))
-            df_is_liked = self.males_matrix < df_random
-        else:
-            df_random = pd.DataFrame(
-                np.random.random(size=self.females_matrix.shape), columns=self.males
-            ).set_index(np.array(self.females))
-            df_is_liked = self.females_matrix < df_random
+        df_combined = df_left.join(df_right, how="cross")
+        size = df_combined.height
 
-        return df_is_liked
+        df_liked = (
+            df_combined.with_columns(
+                (1 + pl.col("like_left") * np.log(pl.col("attr_right"))).clip(0, 1).alias("score"),
+                pl.lit(np.random.rand(size)).alias("random"),
+            )
+            .with_columns((pl.col("random") < pl.col("score")).alias("liked"))
+            .select(["id_left", "id_right", "liked"])
+        )
+
+        return df_liked
 
     def run_swipes(self):
-        self.get_users_dataframe()
-        self.update_users_matrix()
-
-        is_liked_females = self.get_is_liked_dataframe(gender=Gender.female)
-        is_liked_males = self.get_is_liked_dataframe(gender=Gender.male)
+        self._get_user_attractiveness_data()
 
         for id in self.users:
+            print(id)
             user = self.users[id]
-            potential_profiles = self.build_potential_profiles(user)
 
-            matrix = is_liked_males if user.gender == Gender.male else is_liked_females
-            user.swipe(other_users=potential_profiles, matrix=matrix, all_users=self.users)
+            potential_profiles, gender_target = self.get_potential_profiles(user)
+            df_liked = self.get_is_liked_data(
+                user_id=id,
+                potential_profiles=potential_profiles,
+                gender=user.gender,
+                gender_target=gender_target,
+            )
+            user.swipe(df_liked=df_liked, all_users=self.users)
 
         for id in self.users:
             self.users[id].update_match_rate()
             self.users[id].update_like_rate()
 
-    def get_users_dataframe(self):
+    def _get_user_attractiveness_data(self):
+        data = [
+            {
+                "id": u,
+                "gender": self.users[u].gender.value,
+                "attractiveness_score": self.users[u].attractiveness_score,
+                "like_rate": self.users[u].like_rate,
+            }
+            for u in self.users
+        ]
+
+        self.df_users = pl.DataFrame(data)
+
+    def get_users_data(self):
         """Exporte les utilisateurs sous forme de DataFrame (polars ou pandas)."""
         data = [
             {
@@ -150,8 +161,7 @@ class Participants:
             for u in self.users
         ]
 
-        self.df_users = pl.DataFrame(data)
-        return self.df_users
+        return pl.DataFrame(data)
 
     def plot_scatter(df: str, x: str, y: str, color: str, size: str, title: str, labels: dict):
         # Create scatter plot

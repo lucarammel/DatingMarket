@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-import math
 import random
 from enum import Enum
 
-import pandas as pd
+import numpy as np
+import polars as pl
 
 
 class Gender(Enum):
@@ -62,9 +62,10 @@ class User:
             self.match_rate = len(self.matches) / len(self.liked_users)
             self.match_rate_history.append(self.match_rate)
 
-    def compute_threshold_like_rate(self, attractiveness_score):
+    @staticmethod
+    def compute_threshold_like_rate(like_rate, attractiveness_score):
         """Uses an log function to decrease like_rate for higher attractiveness."""
-        return max(min(1 + self.like_rate * math.log(attractiveness_score), 1), 0)
+        return np.max(np.min(1 + like_rate * np.log(attractiveness_score), 1), 0)
 
     def match(self, user_id: int):
         """Registers a match between two users."""
@@ -80,16 +81,19 @@ class User:
         """Determines if the other user has also liked the user."""
         return self in other_user.liked_users
 
-    def swipe(self, other_users: list[int], matrix: pd.DataFrame, all_users: dict[int, User]):
+    def swipe(self, df_liked: pl.DataFrame, all_users: dict[int, User]):
         """Makes swipes on all other users."""
-        users_liked_list = matrix.loc[self.id, other_users].to_list()
+        users_liked_array = df_liked.select("id_right", "liked").to_numpy()
 
-        for idx, liked in zip(other_users, users_liked_list):
-            if liked:
+        other_users_idx = list(users_liked_array[:, 0])
+        other_users_liked = list(users_liked_array[:, 1])
+
+        for idx, liked in zip(other_users_idx, other_users_liked):
+            if liked == 1:
                 self.liked_users.append(idx)
-            if self.is_reciprocal(all_users[idx]):
-                self.match(idx)
-                all_users[idx].match(self.id)
+                if self.is_reciprocal(all_users[idx]):
+                    self.match(idx)
+                    all_users[idx].match(self.id)
 
 
 class Male(User):
