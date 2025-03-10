@@ -35,7 +35,7 @@ if st.sidebar.button("Run Simulation"):
     st.write(logs)
 
     # Convert the users' data into a DataFrame (polars or pandas)
-    df = market.to_dataframe()
+    df = market.get_users_dataframe()
 
     # Display the data as a table
     st.write("Simulation data:")

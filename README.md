@@ -34,5 +34,5 @@ market.run(days=10)
 ### 2. Retrieve Simulation Data
 
 ```python
-df = market.to_dataframe()
+df = market.get_users_dataframe()
 ```

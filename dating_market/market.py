@@ -4,13 +4,13 @@ from dating_market.participants import Participants
 
 
 class Market:
-    def __init__(self, participants: Participants):
+    def __init__(self, n_users, male_ratio):
         self.day = 0
-        self.participants = participants
+        self.participants = Participants(n_users=n_users, male_ratio=male_ratio)
 
     def run(self, days):
         """Runs the simulation for a given number of days."""
-        self.participants.generate_users(n_users=self.n_users, male_ratio=self.male_ratio)
+        self.participants.generate_users()
 
         for _ in range(days):
             self.day += 1

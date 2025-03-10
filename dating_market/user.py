@@ -4,6 +4,8 @@ import math
 import random
 from enum import Enum
 
+import pandas as pd
+
 
 class Gender(Enum):
     male = "Male"
@@ -23,7 +25,7 @@ class User:
         self.liked_users: list[int] = []
         self.seen_users: list[int] = []
         self.like_rate_history: list[float] = [self.like_rate]
-        self.match_rate: float | None = None
+        self.match_rate: float = -1
         self.match_rate_history: list[float] = []
 
     def __str__(self):
@@ -33,7 +35,6 @@ class User:
             f"  Gender: {self.gender.value}\n"
             f"  Attractiveness Score: {self.attractiveness_score}\n"
             f"  Like Rate: {self.like_rate:.2f}\n"
-            f"  Swipes Today: {self.swipes_today}/{self.swipe_limit}\n"
             f"  Matches: {len(self.matches)}\n"
             f"  Liked Users: {len(self.liked_users)}\n"
             f"  Seen Users: {len(self.seen_users)}"
@@ -47,7 +48,7 @@ class User:
 
     def update_like_rate(self):
         """Updates the like_rate with some randomness based on match rate"""
-        if self.match_rate is not None:
+        if self.match_rate != -1:
             if self.match_rate >= 0.33:
                 self.like_rate -= self.like_rate * abs(random.gauss(0, 0.1))
             elif self.match_rate <= 0.1:
@@ -57,53 +58,38 @@ class User:
         self.like_rate_history.append(self.like_rate)
 
     def update_match_rate(self):
-        self.match_rate = len(self.matches) / len(self.liked_users)
-        self.match_rate_history.append(self.match_rate)
+        if len(self.liked_users) > 0:
+            self.match_rate = len(self.matches) / len(self.liked_users)
+            self.match_rate_history.append(self.match_rate)
 
     def compute_threshold_like_rate(self, attractiveness_score):
         """Uses an log function to decrease like_rate for higher attractiveness."""
         return max(min(1 + self.like_rate * math.log(attractiveness_score), 1), 0)
 
-    def swipe(self, other_user: User):
-        """Determines if the user swipes right (likes the other user)."""
-
-        self.swipes_today += 1
-        threshold = self.compute_threshold_like_rate(other_user.attractiveness_score)
-        liked = random.random() < threshold
-
-        return liked
-
     def match(self, user_id: int):
         """Registers a match between two users."""
         self.matches.append(user_id)
 
-    def reset_daily_swipes(self):
-        """Resets swipe count at the start of a new day."""
-        self.swipes_today = 0
-
     def get_opposite_gender(self):
         if self.gender == Gender.male:
-            return Female
+            return Gender.female
         else:
-            return Male
+            return Gender.male
 
     def is_reciprocal(self, other_user: User):
         """Determines if the other user has also liked the user."""
         return self in other_user.liked_users
 
-    def make_all_swipes(self, other_users: list[User]):
+    def swipe(self, other_users: list[int], matrix: pd.DataFrame, all_users: dict[int, User]):
         """Makes swipes on all other users."""
-        for user in other_users:
-            if self.get_swipe_limit():
-                break
-            liked = self.swipe(user)
-            if liked:
-                self.liked_users.append(user.id)
-                if self.is_reciprocal(user):
-                    self.match(user.id)
-                    user.match(self.id)
+        users_liked_list = matrix.loc[self.id, other_users].to_list()
 
-            self.seen_users.append(user.id)
+        for idx, liked in zip(other_users, users_liked_list):
+            if liked:
+                self.liked_users.append(idx)
+            if self.is_reciprocal(all_users[idx]):
+                self.match(idx)
+                all_users[idx].match(self.id)
 
 
 class Male(User):
