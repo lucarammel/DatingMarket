@@ -112,7 +112,6 @@ class Participants:
         self._get_user_attractiveness_data()
 
         for id in self.users:
-            print(id)
             user = self.users[id]
 
             potential_profiles, gender_target = self.get_potential_profiles(user)
@@ -163,7 +162,9 @@ class Participants:
 
         return pl.DataFrame(data)
 
-    def plot_scatter(df: str, x: str, y: str, color: str, size: str, title: str, labels: dict):
+    def plot_scatter(
+        df: pl.DataFrame, x: str, y: str, color: str, size: str, title: str, labels: dict
+    ):
         # Create scatter plot
         fig = px.scatter(
             df,
