@@ -1,12 +1,10 @@
 import random
 
-import numpy as np
-import pandas as pd
 import plotly.express as px
 import polars as pl
 from loguru import logger
 
-from dating_market.user import Female, Gender, Male, User
+from dating_market.user import Female, Male, User
 
 
 class Participants:
@@ -17,9 +15,6 @@ class Participants:
         self.males: list[int] = []
         self.females: list[int] = []
         self.users: dict[int, User] = {}
-
-        self.males_matrix: pd.DataFrame
-        self.females_matrix: pd.DataFrame
 
         self.df_users: pl.DataFrame = pl.DataFrame()
 
@@ -60,13 +55,7 @@ class Participants:
 
         logger.info("Users generated !")
 
-    def sort_users_by_attractiveness(self):
-        self.females = self.df_users.sort(by="attractiveness_score", descending=True)[
-            "id"
-        ].to_list()
-        self.males = self.df_users.sort(by="attractiveness_score", descending=True)["id"].to_list()
-
-    def get_potential_profiles(self, user: User):
+    def get_potential_profiles(self, user: User) -> list[int]:
         gender_target = user.get_opposite_gender()
 
         potential_profiles = self.df_users.filter(
@@ -76,56 +65,22 @@ class Participants:
 
         potential_profiles = potential_profiles.sample(n=count)["id"].to_list()
 
-        return potential_profiles, gender_target
-
-    def get_is_liked_data(
-        self,
-        user_id: int,
-        potential_profiles: list[int],
-        gender: Gender = Gender.male,
-        gender_target: Gender = Gender.female,
-    ):
-        df_left = self.df_users.filter(
-            pl.col("gender") == gender.value, pl.col("id") == user_id
-        ).rename({"id": "id_left", "attractiveness_score": "attr_left", "like_rate": "like_left"})
-        df_right = self.df_users.filter(
-            pl.col("gender") == gender_target.value, pl.col("id").is_in(potential_profiles)
-        ).rename(
-            {"id": "id_right", "attractiveness_score": "attr_right", "like_rate": "like_right"}
-        )
-
-        df_combined = df_left.join(df_right, how="cross")
-        size = df_combined.height
-
-        df_liked = (
-            df_combined.with_columns(
-                (1 + pl.col("like_left") * np.log(pl.col("attr_right"))).clip(0, 1).alias("score"),
-                pl.lit(np.random.rand(size)).alias("random"),
-            )
-            .with_columns((pl.col("random") < pl.col("score")).alias("liked"))
-            .select(["id_left", "id_right", "liked"])
-        )
-
-        return df_liked
+        return potential_profiles
 
     def run_swipes(self):
         self._get_user_attractiveness_data()
 
-        for id in self.users:
-            user = self.users[id]
+        for u in self.users:
+            self.users[u].reset_daily_swipes()
 
-            potential_profiles, gender_target = self.get_potential_profiles(user)
-            df_liked = self.get_is_liked_data(
-                user_id=id,
-                potential_profiles=potential_profiles,
-                gender=user.gender,
-                gender_target=gender_target,
+            profiles_to_present = self.get_potential_profiles(self.users[u])
+            self.users[u].make_all_swipes(
+                potential_profiles=profiles_to_present, all_users=self.users
             )
-            user.swipe(df_liked=df_liked, all_users=self.users)
 
-        for id in self.users:
-            self.users[id].update_match_rate()
-            self.users[id].update_like_rate()
+        for u in self.users:
+            self.users[u].update_match_rate()
+            self.users[u].update_like_rate()
 
     def _get_user_attractiveness_data(self):
         data = [

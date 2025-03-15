@@ -4,7 +4,6 @@ import random
 from enum import Enum
 
 import numpy as np
-import polars as pl
 
 
 class Gender(Enum):
@@ -13,7 +12,9 @@ class Gender(Enum):
 
 
 class User:
-    def __init__(self, id, gender, attractiveness_score, like_rate, swipe_limit):
+    def __init__(
+        self, id, gender: Gender, attractiveness_score: float, like_rate: float, swipe_limit: int
+    ):
         self.id = id
         self.gender = gender
         self.attractiveness_score = attractiveness_score
@@ -62,10 +63,13 @@ class User:
             self.match_rate = len(self.matches) / len(self.liked_users)
             self.match_rate_history.append(self.match_rate)
 
-    @staticmethod
-    def compute_threshold_like_rate(like_rate, attractiveness_score):
+    def reset_daily_swipes(self):
+        """Resets swipe count at the start of a new day."""
+        self.swipes_today = 0
+
+    def compute_threshold_like_rate(self, attractiveness_score):
         """Uses an log function to decrease like_rate for higher attractiveness."""
-        return np.max(np.min(1 + like_rate * np.log(attractiveness_score), 1), 0)
+        return np.max(np.min(1 + self.like_rate * np.log(attractiveness_score), 1), 0)
 
     def match(self, user_id: int):
         """Registers a match between two users."""
@@ -77,23 +81,39 @@ class User:
         else:
             return Gender.male
 
+    def get_possible_match(self, other_user: User):
+        if other_user.id in self.matches:
+            return False
+        if other_user.id in self.liked_users and self.id in other_user.liked_users:
+            return True
+
     def is_reciprocal(self, other_user: User):
         """Determines if the other user has also liked the user."""
         return self in other_user.liked_users
 
-    def swipe(self, df_liked: pl.DataFrame, all_users: dict[int, User]):
+    def swipe(self, other_user: User):
+        """Determines if the user swipes right (likes the other user)."""
+
+        self.swipes_today += 1
+        threshold = self.compute_threshold_like_rate(other_user.attractiveness_score)
+        liked = random.random() < threshold
+
+        return liked
+
+    def make_all_swipes(self, potential_profiles: list[int], all_users: dict[str, User]):
         """Makes swipes on all other users."""
-        users_liked_array = df_liked.select("id_right", "liked").to_numpy()
+        for user_id in potential_profiles:
+            if self.get_swipe_limit():
+                break
+            if user_id not in self.seen_users and user_id != self.id:
+                liked = self.swipe(all_users[user_id])
+                if liked:
+                    self.liked_users.append(user_id)
+                    if self.is_reciprocal(all_users[user_id]):
+                        self.match(user_id)
+                        all_users[user_id].match(self.id)
 
-        other_users_idx = list(users_liked_array[:, 0])
-        other_users_liked = list(users_liked_array[:, 1])
-
-        for idx, liked in zip(other_users_idx, other_users_liked):
-            if liked == 1:
-                self.liked_users.append(idx)
-                if self.is_reciprocal(all_users[idx]):
-                    self.match(idx)
-                    all_users[idx].match(self.id)
+                self.seen_users.append(user_id)
 
 
 class Male(User):
