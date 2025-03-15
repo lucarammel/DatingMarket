@@ -13,22 +13,28 @@ class Gender(Enum):
 
 class User:
     def __init__(
-        self, id, gender: Gender, attractiveness_score: float, like_rate: float, swipe_limit: int
+        self, id, gender: Gender, attractiveness_score: float, like_rate: float, likes_limit: int
     ):
         self.id = id
         self.gender = gender
         self.attractiveness_score = attractiveness_score
         self.like_rate = like_rate
-        self.swipe_limit = swipe_limit
-        self.swipes_today = 0
+        self.likes_limit = likes_limit
+        self.match_rate: float = -1
+        self.likes_today: int = 0
+        self.match_today: int = 0
+        self.swipes_today: int = 0
 
         self.matches: list[int] = []
         self.liked_users: list[int] = []
         self.seen_users: list[int] = [self.id]
+
         self.like_rate_history: list[float] = [self.like_rate]
-        self.match_rate: float = -1
         self.match_rate_history: list[float] = []
-        self.match_by_days = list[int] = []
+
+        self.match_by_days: list[int] = []
+        self.likes_by_day: list[int] = []
+        self.swipes_by_day: list[int] = []
 
     def __str__(self):
         return (
@@ -43,7 +49,7 @@ class User:
         )
 
     def get_swipe_limit(self):
-        if self.swipes_today >= self.swipe_limit:
+        if self.likes_today >= self.likes_limit:
             return True
         else:
             return False
@@ -64,10 +70,11 @@ class User:
             self.match_rate = len(self.matches) / len(self.liked_users)
             self.match_rate_history.append(self.match_rate)
 
-    def reset_dauly(self):
+    def reset_daily(self):
         """Resets swipe count at the start of a new day."""
-        self.swipes_today = 0
+        self.likes_today = 0
         self.match_today = 0
+        self.swipes_today = 0
 
     def compute_threshold_like_rate(self, attractiveness_score):
         """Uses an log function to decrease like_rate for higher attractiveness."""
@@ -91,18 +98,18 @@ class User:
 
     def is_reciprocal(self, other_user: User):
         """Determines if the other user has also liked the user."""
-        return self in other_user.liked_users
+        return self.id in other_user.liked_users
 
     def add_match_by_day(self):
         self.match_today += 1
 
     def swipe(self, other_user: User):
         """Determines if the user swipes right (likes the other user)."""
-
         self.swipes_today += 1
         threshold = self.compute_threshold_like_rate(other_user.attractiveness_score)
         liked = random.random() < threshold
-
+        if liked:
+            self.likes_today += 1
         return liked
 
     def make_all_swipes(self, potential_profiles: list[int], all_users: dict[str, User]):
@@ -119,14 +126,17 @@ class User:
                         all_users[user_id].match(self.id)
 
                 self.seen_users.append(user_id)
+
         self.match_by_days.append(self.match_today)
+        self.likes_by_day.append(self.likes_today)
+        self.swipes_by_day.append(self.swipes_today)
 
 
 class Male(User):
-    def __init__(self, id, attractiveness_score, like_rate, swipe_limit):
-        super().__init__(id, Gender.male, attractiveness_score, like_rate, swipe_limit)
+    def __init__(self, id, attractiveness_score, like_rate, likes_limit):
+        super().__init__(id, Gender.male, attractiveness_score, like_rate, likes_limit)
 
 
 class Female(User):
-    def __init__(self, id, attractiveness_score, like_rate, swipe_limit):
-        super().__init__(id, Gender.female, attractiveness_score, like_rate, swipe_limit)
+    def __init__(self, id, attractiveness_score, like_rate, likes_limit):
+        super().__init__(id, Gender.female, attractiveness_score, like_rate, likes_limit)

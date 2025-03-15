@@ -39,7 +39,7 @@ class Participants:
                     id=len(self.users),
                     attractiveness_score=max(min(random.gauss(0.5, 0.2), 0.8), 0.2),
                     like_rate=max(min(random.gauss(0.5, 0.1), 0.8), 0.2),
-                    swipe_limit=20,
+                    likes_limit=20,
                 )
             )
 
@@ -49,7 +49,7 @@ class Participants:
                     id=len(self.users),
                     attractiveness_score=max(min(random.gauss(0.5, 0.2), 0.8), 0.2),
                     like_rate=max(min(random.gauss(0.5, 0.1), 0.8), 0.2),
-                    swipe_limit=20,
+                    likes_limit=20,
                 )
             )
 
@@ -61,7 +61,7 @@ class Participants:
         potential_profiles = self.df_users.filter(
             ~pl.col("id").is_in(user.seen_users), pl.col("gender") == gender_target.value
         )
-        count = min(potential_profiles.height, user.swipe_limit)
+        count = min(potential_profiles.height, user.likes_limit)
 
         potential_profiles = potential_profiles.sample(n=count)["id"].to_list()
 
@@ -71,7 +71,7 @@ class Participants:
         self._get_user_attractiveness_data()
 
         for u in self.users:
-            self.users[u].reset_daily_swipes()
+            self.users[u].reset_daily()
 
             profiles_to_present = self.get_potential_profiles(self.users[u])
             self.users[u].make_all_swipes(
