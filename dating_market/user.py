@@ -24,10 +24,11 @@ class User:
 
         self.matches: list[int] = []
         self.liked_users: list[int] = []
-        self.seen_users: list[int] = []
+        self.seen_users: list[int] = [self.id]
         self.like_rate_history: list[float] = [self.like_rate]
         self.match_rate: float = -1
         self.match_rate_history: list[float] = []
+        self.match_by_days = list[int] = []
 
     def __str__(self):
         return (
@@ -63,13 +64,14 @@ class User:
             self.match_rate = len(self.matches) / len(self.liked_users)
             self.match_rate_history.append(self.match_rate)
 
-    def reset_daily_swipes(self):
+    def reset_dauly(self):
         """Resets swipe count at the start of a new day."""
         self.swipes_today = 0
+        self.match_today = 0
 
     def compute_threshold_like_rate(self, attractiveness_score):
         """Uses an log function to decrease like_rate for higher attractiveness."""
-        return np.max(np.min(1 + self.like_rate * np.log(attractiveness_score), 1), 0)
+        return max(min(1 + self.like_rate * np.log(attractiveness_score), 1), 0)
 
     def match(self, user_id: int):
         """Registers a match between two users."""
@@ -91,6 +93,9 @@ class User:
         """Determines if the other user has also liked the user."""
         return self in other_user.liked_users
 
+    def add_match_by_day(self):
+        self.match_today += 1
+
     def swipe(self, other_user: User):
         """Determines if the user swipes right (likes the other user)."""
 
@@ -105,7 +110,7 @@ class User:
         for user_id in potential_profiles:
             if self.get_swipe_limit():
                 break
-            if user_id not in self.seen_users and user_id != self.id:
+            if user_id not in self.seen_users:
                 liked = self.swipe(all_users[user_id])
                 if liked:
                     self.liked_users.append(user_id)
@@ -114,6 +119,7 @@ class User:
                         all_users[user_id].match(self.id)
 
                 self.seen_users.append(user_id)
+        self.match_by_days.append(self.match_today)
 
 
 class Male(User):
