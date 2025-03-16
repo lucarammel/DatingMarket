@@ -17,12 +17,6 @@ class Market:
             else Participants(n_users=n_users, male_ratio=male_ratio)
         )
 
-    def get_users_data(self, nb_decimals: int = 3) -> pl.DataFrame:
-        if isinstance(self.male_ratio, float):
-            self.participants.get_users_data(nb_decimals=nb_decimals)
-        else:
-            dfs = {k: self.participants[k].get_users_data() for k in self.participants}
-
     def run(self):
         """Runs the simulation for a given number of days."""
         if isinstance(self.male_ratio, list):
@@ -42,9 +36,7 @@ class Market:
 
         logger.info("Market run done !")
 
-    def get_market_data(self):
-        users = self.participants.users
-
+    def _get_market_dataframe_by_run(self, users) -> pl.DataFrame:
         data = [
             {
                 "user": users[u].id,
@@ -65,6 +57,47 @@ class Market:
             )
             .explode("day", "matches", "likes", "swipes", "like_rate", "match_rate", "likes_limit")
         )
+
+    def get_market_data(self):
+        if isinstance(self.male_ratio, list):
+            data = {}
+
+            data = {
+                k: self._get_market_dataframe_by_run(self.participants[k].users).with_columns(
+                    pl.lit(k).alias("male_ratio")
+                )
+                for k in self.participants
+            }
+
+            dfs: pl.DataFrame = data[0]
+            for k in data:
+                if k == 0:
+                    pass
+                else:
+                    dfs.join(data[k], suffix=f"_{k}")
+
+            return dfs
+
+        else:
+            users = self.participants.users
+            return self._get_market_dataframe_by_run(users)
+
+    def get_users_data(self, nb_decimals: int = 3) -> pl.DataFrame:
+        if isinstance(self.male_ratio, float):
+            return self.participants.get_users_data(nb_decimals=nb_decimals)
+        else:
+            data = {
+                k: self.participants[k].get_users_data().with_columns(pl.lit(k).alias("male_ratio"))
+                for k in self.participants
+            }
+            dfs: pl.DataFrame = data[0]
+            for k in data:
+                if k == 0:
+                    pass
+                else:
+                    dfs.join(data[k], suffix=f"_{k}")
+
+            return dfs
 
     def plot_scatter(self, **kwargs):
         self.participants.plot_scatter(**kwargs)
