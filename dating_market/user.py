@@ -29,7 +29,7 @@ class User:
         self.liked_users: list[int] = []
         self.seen_users: list[int] = [self.id]
 
-        self.like_rate_history: list[float] = [self.like_rate]
+        self.like_rate_history: list[float] = []
         self.match_rate_history: list[float] = []
 
         self.match_by_days: list[int] = []
@@ -80,9 +80,13 @@ class User:
         """Uses an log function to decrease like_rate for higher attractiveness."""
         return max(min(1 + self.like_rate * np.log(attractiveness_score), 1), 0)
 
-    def match(self, user_id: int):
+    def match(self, user_id: int, matched_user: User):
         """Registers a match between two users."""
+        self.match_today += 1
         self.matches.append(user_id)
+
+        matched_user.matches.append(self.id)
+        matched_user.match_today += 1
 
     def get_opposite_gender(self):
         if self.gender == Gender.male:
@@ -99,9 +103,6 @@ class User:
     def is_reciprocal(self, other_user: User):
         """Determines if the other user has also liked the user."""
         return self.id in other_user.liked_users
-
-    def add_match_by_day(self):
-        self.match_today += 1
 
     def swipe(self, other_user: User):
         """Determines if the user swipes right (likes the other user)."""
@@ -122,8 +123,7 @@ class User:
                 if liked:
                     self.liked_users.append(user_id)
                     if self.is_reciprocal(all_users[user_id]):
-                        self.match(user_id)
-                        all_users[user_id].match(self.id)
+                        self.match(user_id, all_users[user_id])
 
                 self.seen_users.append(user_id)
 
