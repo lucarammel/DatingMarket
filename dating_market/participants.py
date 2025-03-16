@@ -61,9 +61,8 @@ class Participants:
         potential_profiles = self.df_users.filter(
             ~pl.col("id").is_in(user.seen_users), pl.col("gender") == gender_target.value
         )
-        count = min(potential_profiles.height, user.likes_limit)
 
-        potential_profiles = potential_profiles.sample(n=count)["id"].to_list()
+        potential_profiles = potential_profiles.select(pl.col("id").shuffle())["id"].to_list()
 
         return potential_profiles
 
@@ -81,6 +80,7 @@ class Participants:
         for u in self.users:
             self.users[u].update_match_rate()
             self.users[u].update_like_rate()
+            self.users[u].update_likes_limit()
 
     def _get_user_attractiveness_data(self):
         data = [

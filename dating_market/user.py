@@ -20,6 +20,8 @@ class User:
         self.attractiveness_score = attractiveness_score
         self.like_rate = like_rate
         self.likes_limit = likes_limit
+        self.upper_likes_limit = likes_limit
+        self.lower_likes_limit = int(likes_limit / 3)
         self.match_rate: float = -1
         self.likes_today: int = 0
         self.match_today: int = 0
@@ -31,6 +33,7 @@ class User:
 
         self.like_rate_history: list[float] = []
         self.match_rate_history: list[float] = []
+        self.likes_limit_history: list[float] = []
 
         self.match_by_days: list[int] = []
         self.likes_by_day: list[int] = []
@@ -41,11 +44,8 @@ class User:
             "User:\n"
             f"  ID: {self.id}\n"
             f"  Gender: {self.gender.value}\n"
-            f"  Attractiveness Score: {self.attractiveness_score}\n"
+            f"  Attractiveness Score: {self.attractiveness_score:.2f}\n"
             f"  Like Rate: {self.like_rate:.2f}\n"
-            f"  Matches: {len(self.matches)}\n"
-            f"  Liked Users: {len(self.liked_users)}\n"
-            f"  Seen Users: {len(self.seen_users)}"
         )
 
     def get_swipe_limit(self):
@@ -54,13 +54,26 @@ class User:
         else:
             return False
 
+    def update_likes_limit(self):
+        if self.match_rate != -1:
+            step = int(self.likes_limit * abs(random.gauss(0, 1)))
+            if self.match_rate >= 0.33:
+                if self.likes_limit - step >= self.lower_likes_limit:
+                    self.likes_limit -= step
+            elif self.match_rate <= 0.1:
+                if self.likes_limit + step <= self.upper_likes_limit:
+                    self.likes_limit += step
+
+        self.likes_limit_history.append(self.likes_limit)
+
     def update_like_rate(self):
         """Updates the like_rate with some randomness based on match rate"""
         if self.match_rate != -1:
+            increment = self.like_rate * abs(random.gauss(0, 0.1))
             if self.match_rate >= 0.33:
-                self.like_rate -= self.like_rate * abs(random.gauss(0, 0.1))
+                self.like_rate -= increment
             elif self.match_rate <= 0.1:
-                self.like_rate += self.like_rate * abs(random.gauss(0, 0.1))
+                self.like_rate += increment
 
         self.like_rate = min(max(self.like_rate, 0), 1)
         self.like_rate_history.append(self.like_rate)
