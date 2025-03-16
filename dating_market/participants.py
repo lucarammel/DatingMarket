@@ -95,20 +95,20 @@ class Participants:
 
         self.df_users = pl.DataFrame(data)
 
-    def get_users_data(self):
+    def get_users_data(self, nb_decimals: int = 3):
         """Exporte les utilisateurs sous forme de DataFrame (polars ou pandas)."""
         data = [
             {
                 "id": u,
                 "gender": self.users[u].gender.value,
-                "attractiveness_score": round(self.users[u].attractiveness_score, 2),
-                "like_rate_start": round(self.users[u].like_rate_history[0], 2),
-                "like_rate_end": round(self.users[u].like_rate, 2),
-                "increase_like_rate": round(
-                    self.users[u].like_rate - self.users[u].like_rate_history[0], 2
+                "attractiveness_score": round(self.users[u].attractiveness_score, nb_decimals),
+                "like_rate_start": round(self.users[u].like_rate_history[0], nb_decimals),
+                "like_rate_end": round(self.users[u].like_rate, nb_decimals),
+                "like_rate_evolution": round(
+                    self.users[u].like_rate - self.users[u].like_rate_history[0], nb_decimals
                 ),
                 "matches": len(self.users[u].matches),
-                "match_rate": round(self.users[u].match_rate, 2),
+                "match_rate": round(self.users[u].match_rate, nb_decimals),
                 "likes": len(self.users[u].liked_users),
                 "seen_users": len(self.users[u].seen_users),
             }
@@ -118,18 +118,14 @@ class Participants:
         return pl.DataFrame(data)
 
     def plot_scatter(
-        df: pl.DataFrame, x: str, y: str, color: str, size: str, title: str, labels: dict
+        df: pl.DataFrame,
+        x: str,
+        y: str,
+        color: str,
+        title: str,
     ):
         # Create scatter plot
-        fig = px.scatter(
-            df,
-            x=x,
-            y=y,
-            color=color,  # Different colors for Male & Female
-            size=size,
-            title=title,
-            labels=labels,
-        )
+        fig = px.scatter(data_frame=df, x=x, y=y, color=color, title=title)
 
         # Update layout for customization
         fig.update_layout(
