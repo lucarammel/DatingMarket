@@ -65,6 +65,8 @@ class User:
         self.matches: list[int] = []
         self.liked_users: list[int] = []
         self.seen_users: list[int] = [self.id]
+        self.liked_by: list[int] = []
+        self.seen_by: list[int] = []
 
         self.like_rate_history: list[float] = []
         self.match_rate_history: list[float] = []
@@ -165,6 +167,8 @@ class User:
         liked = random.random() < threshold
         if liked:
             self.likes_today += 1
+            other_user.liked_by.append(self.id)
+            self.liked_users.append(other_user.id)
         return liked
 
     def make_all_swipes(self, potential_profiles: list[int], all_users: dict[str, User]):
@@ -175,11 +179,11 @@ class User:
             if user_id not in self.seen_users:
                 liked = self.swipe(all_users[user_id])
                 if liked:
-                    self.liked_users.append(user_id)
                     if self.is_reciprocal(all_users[user_id]):
                         self.match(user_id, all_users[user_id])
 
                 self.seen_users.append(user_id)
+                all_users[user_id].seen_by.append(self.id)
 
         self.match_by_days.append(self.match_today)
         self.likes_by_day.append(self.likes_today)

@@ -84,11 +84,12 @@ class Participants:
 
         potential_profiles = potential_profiles.select(pl.col("id").shuffle())["id"].to_list()
 
-        potential_profiles = self.weighted_random_selection(
-            users=potential_profiles,
-            num_picks=user.swipe_limit,
-            probability_ratio_between_best_and_worth=3,
-        )
+        if len(potential_profiles) > 0:
+            potential_profiles = self.weighted_random_selection(
+                users=potential_profiles,
+                num_picks=min(user.swipe_limit, len(potential_profiles)),
+                probability_ratio_between_best_and_worth=3,
+            )
         return potential_profiles
 
     def weighted_random_selection(
@@ -164,6 +165,10 @@ class Participants:
                 "matches": len(self.users[u].matches),
                 "match_rate": round(self.users[u].match_rate, nb_decimals),
                 "likes": len(self.users[u].liked_users),
+                "liked_by": len(self.users[u].liked_by),
+                "liked_by_rate": round(
+                    len(self.users[u].liked_by) / len(self.users[u].seen_by), nb_decimals
+                ),
                 "seen_users": len(self.users[u].seen_users),
             }
             for u in self.users
