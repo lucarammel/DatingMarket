@@ -12,7 +12,7 @@ class Market:
         self.male_ratio = male_ratio
 
         self.participants: dict[float, Participants] | Participants = (
-            {male_ratio: Participants(n_users=n_users, male_ratio=male_ratio) for i in male_ratio}
+            {m: Participants(n_users=n_users, male_ratio=m) for m in male_ratio}
             if isinstance(male_ratio, list)
             else Participants(n_users=n_users, male_ratio=male_ratio)
         )
@@ -60,23 +60,14 @@ class Market:
 
     def get_market_data(self):
         if isinstance(self.male_ratio, list):
-            data = {}
-
-            data = {
+            data: dict[int, pl.DataFrame] = {
                 k: self._get_market_dataframe_by_run(self.participants[k].users).with_columns(
                     pl.lit(k).alias("male_ratio")
                 )
                 for k in self.participants
             }
 
-            dfs: pl.DataFrame = data[0]
-            for k in data:
-                if k == 0:
-                    pass
-                else:
-                    dfs.join(data[k], suffix=f"_{k}")
-
-            return dfs
+            return pl.concat([data[k] for k in data.keys()], how="vertical")
 
         else:
             users = self.participants.users
@@ -86,18 +77,12 @@ class Market:
         if isinstance(self.male_ratio, float):
             return self.participants.get_users_data(nb_decimals=nb_decimals)
         else:
-            data = {
+            data: dict[int, pl.DataFrame] = {
                 k: self.participants[k].get_users_data().with_columns(pl.lit(k).alias("male_ratio"))
                 for k in self.participants
             }
-            dfs: pl.DataFrame = data[0]
-            for k in data:
-                if k == 0:
-                    pass
-                else:
-                    dfs.join(data[k], suffix=f"_{k}")
 
-            return dfs
+            return pl.concat([data[k] for k in data.keys()], how="vertical")
 
     def plot_scatter(self, **kwargs):
         self.participants.plot_scatter(**kwargs)
