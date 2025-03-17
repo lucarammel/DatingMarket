@@ -1,5 +1,6 @@
 import random
 
+import numpy as np
 import polars as pl
 from loguru import logger
 
@@ -7,7 +8,15 @@ from dating_market.user import Female, Male, User
 
 
 class Participants:
+    """Represents a group of users in the dating market."""
+
     def __init__(self, n_users: int, male_ratio: float):
+        """Initializes the Participants group with a given number of users and a male ratio.
+
+        Args:
+            n_users (int): Total number of users.
+            male_ratio (float): Proportion of male users in the group.
+        """
         self.n_users = n_users
         self.male_ratio = male_ratio
 
@@ -18,7 +27,11 @@ class Participants:
         self.df_users: pl.DataFrame = pl.DataFrame()
 
     def add_user(self, user: User):
-        """Adds a user to the market."""
+        """Adds a user to the participants list.
+
+        Args:
+            user (User): The user to be added.
+        """
         if isinstance(user, Male):
             self.males.append(user.id)
         else:
@@ -26,7 +39,7 @@ class Participants:
         self.users[user.id] = user
 
     def generate_users(self):
-        """Generates `n_users` users with a proportion of males defined by `male_ratio`."""
+        """Generates a specified number of users based on the male-to-female ratio."""
 
         num_males = int(self.n_users * self.male_ratio)
         num_females = self.n_users - num_males
@@ -55,6 +68,14 @@ class Participants:
         logger.info("Users generated !")
 
     def get_potential_profiles(self, user: User) -> list[int]:
+        """Retrieves potential match profiles for a given user.
+
+        Args:
+            user (User): The user seeking potential matches.
+
+        Returns:
+            list[int]: List of user IDs representing potential matches.
+        """
         gender_target = user.get_opposite_gender()
 
         potential_profiles = self.df_users.filter(
@@ -63,9 +84,35 @@ class Participants:
 
         potential_profiles = potential_profiles.select(pl.col("id").shuffle())["id"].to_list()
 
+        potential_profiles = self.weighted_random_selection(
+            users=potential_profiles,
+            num_picks=user.swipe_limit,
+            probability_ratio_between_best_and_worth=3,
+        )
         return potential_profiles
 
+    def weighted_random_selection(
+        self, users: list[int], num_picks: int, probability_ratio_between_best_and_worth: int
+    ):
+        """Selects users randomly with weighted probabilities based on attractiveness.
+
+        Args:
+            users (list[int]): List of user IDs.
+            num_picks (int): Number of users to select.
+            probability_ratio_between_best_and_worth (int): Ratio influencing selection probabilities.
+
+        Returns:
+            list[int]: Selected user IDs.
+        """
+        n = len(users)
+        weights = np.linspace(probability_ratio_between_best_and_worth, 1, n)
+        weights /= weights.sum()
+
+        selected_users = np.random.choice(users, size=num_picks, replace=False, p=weights)
+        return list(selected_users)
+
     def run_swipes(self):
+        """Simulates a full round of swiping for all users, updating match and like rates."""
         self._get_user_attractiveness_data()
 
         for u in self.users:
@@ -82,6 +129,7 @@ class Participants:
             self.users[u].update_likes_limit()
 
     def _get_user_attractiveness_data(self):
+        """Collects user attractiveness and like rate data into a DataFrame."""
         data = [
             {
                 "id": u,
@@ -95,7 +143,14 @@ class Participants:
         self.df_users = pl.DataFrame(data)
 
     def get_users_data(self, nb_decimals: int = 3):
-        """Exporte les utilisateurs sous forme de DataFrame (polars ou pandas)."""
+        """Exports user data as a Polars DataFrame.
+
+        Args:
+            nb_decimals (int): Number of decimal places for rounding numerical values.
+
+        Returns:
+            pl.DataFrame: DataFrame containing user statistics.
+        """
         data = [
             {
                 "user": u,
