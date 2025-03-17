@@ -153,6 +153,8 @@ class Market:
         color_map: dict[str, str] = {"Male": "#377ae8", "Female": "#d337e8"},
         width=900,
         height=600,
+        save_to_html=False,
+        filename="plot.html",
     ):
         """
         Plots a scatter plot of user data using Plotly. Optionally animates the plot over the days and customizes the appearance.
@@ -223,4 +225,7 @@ class Market:
             legend_title="Legend",
         )
         fig["layout"].pop("updatemenus")
+
+        if save_to_html:
+            fig.write_html(filename)
         fig.show()
