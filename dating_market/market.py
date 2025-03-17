@@ -1,7 +1,10 @@
+import numpy as np
+import plotly.express as px
 import polars as pl
 from loguru import logger
 
 from dating_market.participants import Participants
+from dating_market.user import User
 
 
 class Market:
@@ -10,6 +13,9 @@ class Market:
         self.day = 0
         self.n_users = n_users
         self.male_ratio = male_ratio
+
+        if isinstance(self.male_ratio, list):
+            self.male_ratio.sort()
 
         self.participants: dict[float, Participants] | Participants = (
             {m: Participants(n_users=n_users, male_ratio=m) for m in male_ratio}
@@ -36,12 +42,15 @@ class Market:
 
         logger.info("Market run done !")
 
-    def _get_market_dataframe_by_run(self, users) -> pl.DataFrame:
+    def _get_market_dataframe_by_run(self, users: dict[int, User]) -> pl.DataFrame:
         data = [
             {
                 "user": users[u].id,
+                "gender": users[u].gender.value,
                 "matches": users[u].match_by_days,
+                "matches_cumulative": list(np.cumsum(users[u].match_by_days)),
                 "likes": users[u].likes_by_day,
+                "likes_cumulative": list(np.cumsum(users[u].likes_by_day)),
                 "swipes": users[u].swipes_by_day,
                 "like_rate": users[u].like_rate_history,
                 "match_rate": users[u].match_rate_history,
@@ -55,7 +64,17 @@ class Market:
             .with_columns(
                 pl.repeat([i for i in range(1, self.n_days + 1)], self.n_users).alias("day")
             )
-            .explode("day", "matches", "likes", "swipes", "like_rate", "match_rate", "likes_limit")
+            .explode(
+                "day",
+                "matches",
+                "matches_cumulative",
+                "likes",
+                "likes_cumulative",
+                "swipes",
+                "like_rate",
+                "match_rate",
+                "likes_limit",
+            )
         )
 
     def get_market_data(self):
@@ -84,5 +103,70 @@ class Market:
 
             return pl.concat([data[k] for k in data.keys()], how="vertical")
 
-    def plot_scatter(self, **kwargs):
-        self.participants.plot_scatter(**kwargs)
+    def plot_scatter(
+        self,
+        df: pl.DataFrame,
+        x: str,
+        y: str,
+        color: str,
+        title: str,
+        slider_column: str | None = None,
+        color_map: dict[str, str] = {"Male": "#377ae8", "Female": "#d337e8"},
+        width=900,
+        height=600,
+    ):
+        if isinstance(self.male_ratio, list):
+            # Create scatter plot
+            fig = px.scatter(
+                data_frame=df,
+                x=x,
+                y=y,
+                color=color,
+                title=title,
+                animation_frame=slider_column,
+                color_discrete_map=color_map,
+                width=width,
+                height=height,
+            )
+        else:
+            fig = px.scatter(
+                data_frame=df,
+                x=x,
+                y=y,
+                color=color,
+                title=title,
+                color_discrete_map=color_map,
+                width=width,
+                height=height,
+            )
+
+        # Update layout for customization
+        fig.update_layout(
+            title_font=dict(family="Arial", size=20, color="black", weight="bold"),  # Bold title
+            xaxis_title_font=dict(
+                family="Arial", size=14, color="black", weight="bold"
+            ),  # Bold x-axis label
+            yaxis_title_font=dict(
+                family="Arial", size=14, color="black", weight="bold"
+            ),  # Bold y-axis label
+            font=dict(
+                family="Arial", size=12, color="black", weight="bold"
+            ),  # Bold labels and ticks
+            margin=dict(l=50, r=50, t=50, b=50),  # Add margins around the plot
+            xaxis=dict(
+                showgrid=True,
+                zeroline=True,
+                showline=True,  # Show x-axis line
+                linecolor="black",  # Set the x-axis line color
+            ),
+            yaxis=dict(
+                showgrid=True,
+                zeroline=True,
+                showline=True,  # Show y-axis line
+                linecolor="black",  # Set the y-axis line color
+                anchor="x",
+            ),
+            legend_title="Legend",
+        )
+        fig["layout"].pop("updatemenus")
+        fig.show()

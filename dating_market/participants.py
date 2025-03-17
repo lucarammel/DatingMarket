@@ -1,6 +1,5 @@
 import random
 
-import plotly.express as px
 import polars as pl
 from loguru import logger
 
@@ -99,7 +98,7 @@ class Participants:
         """Exporte les utilisateurs sous forme de DataFrame (polars ou pandas)."""
         data = [
             {
-                "id": u,
+                "user": u,
                 "gender": self.users[u].gender.value,
                 "attractiveness_score": round(self.users[u].attractiveness_score, nb_decimals),
                 "like_rate_start": round(self.users[u].like_rate_history[0], nb_decimals),
@@ -116,44 +115,3 @@ class Participants:
         ]
 
         return pl.DataFrame(data)
-
-    def plot_scatter(
-        df: pl.DataFrame,
-        x: str,
-        y: str,
-        color: str,
-        title: str,
-    ):
-        # Create scatter plot
-        fig = px.scatter(data_frame=df, x=x, y=y, color=color, title=title)
-
-        # Update layout for customization
-        fig.update_layout(
-            title_font=dict(family="Arial", size=20, color="black", weight="bold"),  # Bold title
-            xaxis_title_font=dict(
-                family="Arial", size=14, color="black", weight="bold"
-            ),  # Bold x-axis label
-            yaxis_title_font=dict(
-                family="Arial", size=14, color="black", weight="bold"
-            ),  # Bold y-axis label
-            font=dict(
-                family="Arial", size=12, color="black", weight="bold"
-            ),  # Bold labels and ticks
-            margin=dict(l=50, r=50, t=50, b=50),  # Add margins around the plot
-            xaxis=dict(
-                showgrid=True,
-                zeroline=True,
-                showline=True,  # Show x-axis line
-                linecolor="black",  # Set the x-axis line color
-            ),
-            yaxis=dict(
-                showgrid=True,
-                zeroline=True,
-                showline=True,  # Show y-axis line
-                linecolor="black",  # Set the y-axis line color
-                anchor="x",
-            ),
-            legend_title="Legend",
-        )
-        # fig.update_traces(marker=dict(sizemode="diameter", sizemax=20))
-        fig.show()
