@@ -42,6 +42,6 @@ data_market = market.get_market_data()
 
 ## Example outputs
 
-[View the Plotly Plot](https://github.com/lucarammel/DatingMarket/blob/main/pictures/pictures/match_rate_vs_liked_rate.html)
+[View the Plotly Plot](https://github.com/lucarammel/DatingMarket/blob/main/pictures/match_rate_vs_liked_rate.html)
 
-[test](https://github.com/lucarammel/DatingMarket/blob/main/pictures/pictures/pictures/match_vs_attractiveness.html)
+[test](https://github.com/lucarammel/DatingMarket/blob/main/pictures/match_vs_attractiveness.html)
