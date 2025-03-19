@@ -52,7 +52,7 @@ class Market:
             else:
                 self.participants.run_swipes()
 
-        logger.info("Market run done !")
+        logger.success("Market run done !")
 
     def _get_market_dataframe_by_run(self, users: dict[int, User]) -> pl.DataFrame:
         """

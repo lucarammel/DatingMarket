@@ -65,7 +65,7 @@ class Participants:
                 )
             )
 
-        logger.info("Users generated !")
+        logger.success("Users generated !")
 
     def get_potential_profiles(self, user: User) -> list[int]:
         """Retrieves potential match profiles for a given user.
@@ -88,7 +88,7 @@ class Participants:
             potential_profiles = self.weighted_random_selection(
                 users=potential_profiles,
                 num_picks=min(user.swipe_limit, len(potential_profiles)),
-                probability_ratio_between_best_and_worth=3,
+                probability_ratio_between_best_and_worth=5,
             )
         return potential_profiles
 
@@ -169,6 +169,7 @@ class Participants:
                 "liked_by_rate": round(
                     len(self.users[u].liked_by) / len(self.users[u].seen_by), nb_decimals
                 ),
+                "seen_by": len(self.users[u].seen_by),
                 "seen_users": len(self.users[u].seen_users),
             }
             for u in self.users
