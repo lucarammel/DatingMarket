@@ -228,4 +228,103 @@ class Market:
 
         if save_to_html:
             fig.write_html(filename)
-        fig.show()
+
+        return fig
+
+    def plot_histogram(
+        self,
+        df: pl.DataFrame,
+        x: str,
+        y: str,
+        color: str,
+        title: str,
+        slider_column: str | None = None,
+        color_map: dict[str, str] = {"Male": "#377ae8", "Female": "#d337e8"},
+        width=900,
+        height=600,
+        bargap=0.1,
+        opacity=0.8,
+        save_to_html=False,
+        filename="plot.html",
+        category_order=None,
+    ):
+        """
+        Plots a scatter plot of user data using Plotly. Optionally animates the plot over the days and customizes the appearance.
+
+        Args:
+            df (pl.DataFrame): The DataFrame containing the data to plot.
+            x (str): The column name for the x-axis.
+            y (str): The column name for the y-axis.
+            color (str): The column name used to color the data points.
+            title (str): The title of the plot.
+            slider_column (str | None, optional): The column used for animation frames (default is None).
+            color_map (dict[str, str], optional): A mapping for the color of different groups (default maps "Male" to blue and "Female" to pink).
+            width (int, optional): The width of the plot (default is 900).
+            height (int, optional): The height of the plot (default is 600).
+        """
+
+        if isinstance(self.male_ratio, list):
+            # Create scatter plot
+            fig = px.histogram(
+                data_frame=df,
+                x=x,
+                y=y,
+                color=color,
+                title=title,
+                animation_frame=slider_column,
+                color_discrete_map=color_map,
+                width=width,
+                height=height,
+                barmode="overlay",
+                opacity=opacity,
+                category_orders=category_order,
+            )
+        else:
+            fig = px.histogram(
+                data_frame=df,
+                x=x,
+                y=y,
+                color=color,
+                title=title,
+                color_discrete_map=color_map,
+                width=width,
+                height=height,
+                barmode="overlay",
+                opacity=opacity,
+                category_orders=category_order,
+            )
+
+        # Update layout for customization
+        fig.update_layout(
+            title_font=dict(family="Arial", size=20, color="black", weight="bold"),  # Bold title
+            xaxis_title_font=dict(
+                family="Arial", size=14, color="black", weight="bold"
+            ),  # Bold x-axis label
+            yaxis_title_font=dict(
+                family="Arial", size=14, color="black", weight="bold"
+            ),  # Bold y-axis label
+            font=dict(
+                family="Arial", size=12, color="black", weight="bold"
+            ),  # Bold labels and ticks
+            margin=dict(l=50, r=50, t=50, b=50),  # Add margins around the plot
+            xaxis=dict(
+                showgrid=True,
+                zeroline=True,
+                showline=True,  # Show x-axis line
+                linecolor="black",  # Set the x-axis line color
+            ),
+            yaxis=dict(
+                showgrid=True,
+                zeroline=True,
+                showline=True,  # Show y-axis line
+                linecolor="black",  # Set the y-axis line color
+                anchor="x",
+            ),
+            legend_title="Legend",
+            bargap=bargap,
+        )
+        fig["layout"].pop("updatemenus")
+
+        if save_to_html:
+            fig.write_html(filename)
+        return fig
