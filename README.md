@@ -15,35 +15,6 @@ This project simulates a heterosexual dating market where users engage in swipin
 
 ## Model Architecture
 
-### Core Components
-
-#### 1. **User Model**
-
-Each user is characterized by:
-
-- **Static attributes**: `id`, `gender`, `attractiveness_score` (0.2-0.8)
-- **Behavioral parameters**: `like_rate`, `likes_limit`, `swipe_limit`
-- **Dynamic state**: matches, liked users, seen profiles, daily counters
-- **Historical tracking**: like rate evolution, match rate history, daily statistics
-
-#### 2. **Participants Manager**
-
-Handles user populations with:
-
-- Configurable male-to-female ratios
-- Weighted profile selection favoring attractive users
-- Daily interaction orchestration
-- Data collection and export
-
-#### 3. **Market Simulator**
-
-Orchestrates multiple scenarios:
-
-- Support for single or multiple gender ratio experiments
-- Multi-day simulation cycles
-- Comprehensive data aggregation
-- Visualization and analysis tools
-
 ### Mathematical Model
 
 #### Swiping Decision
